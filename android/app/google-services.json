@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "79396472751",
+    "project_id": "message-me-bebdc",
+    "storage_bucket": "message-me-bebdc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:79396472751:android:44d2e19d7fadfd244d515a",
+        "android_client_info": {
+          "package_name": "com.example.messageme_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "79396472751-ckl5shccijpvl20ru9bboajs53rg2h12.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYNNW8uPQlYI2H_5DW0LrzJQpEwrqyBWY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "79396472751-ckl5shccijpvl20ru9bboajs53rg2h12.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
