@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:messageme_app/cubit/cubit.dart';
 import 'package:messageme_app/cubit/states.dart';
-import 'package:messageme_app/modules/register_screen.dart';
+import 'package:messageme_app/pages/register_screen.dart';
 import 'package:messageme_app/shared/components.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 
@@ -43,7 +43,7 @@ class LoginScreen extends StatelessWidget {
                               height: 180,
                             ),
                             const SizedBox(height: 10),
-                            defaultTextField(
+                            MyTextField(
                                 label: 'Email Address',
                                 icon: Icons.email_outlined,
                                 controller: emailController,
@@ -51,10 +51,10 @@ class LoginScreen extends StatelessWidget {
                                   if (!value!.contains('@')) {
                                     return 'worng email';
                                   }
-                                }),
+                                }
+                                ),
                             const SizedBox(height: 10),
-                            defaultTextField(
-                                label: 'Password',
+                            MyTextField(label: 'Password',
                                 icon: Icons.lock_outlined,
                                 hidePassword: true,
                                 controller: passwordController,
@@ -91,6 +91,7 @@ class LoginScreen extends StatelessWidget {
                                     }
                                   } catch (e) {
                                     cubit.nonshowingSpinnerMethod();
+                                    print(' the error ======= :${e.toString()}');
                                     cubit.showingInvalid("The password is invalid or the user does not have a password.");
                                   }
                                 }

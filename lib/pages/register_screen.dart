@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:messageme_app/cubit/cubit.dart';
 import 'package:messageme_app/cubit/states.dart';
-import 'package:messageme_app/modules/chat_screen.dart';
+import 'package:messageme_app/pages/chat_screen.dart';
 import 'package:messageme_app/shared/components.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 
@@ -13,25 +13,21 @@ import 'login_screen.dart';
 
 class RegisterScreen extends StatelessWidget {
   static String routeName = "Register Screen";
+
   final GlobalKey<FormState> _formKey =GlobalKey<FormState>();
 
   TextEditingController emailController =TextEditingController();
-
   TextEditingController passwordController =TextEditingController();
-
   TextEditingController confirmPasswordController =TextEditingController();
 
   final _auth = FirebaseAuth.instance;
-
-
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context)=>AppCubit(),
       child: BlocConsumer<AppCubit,AppStates>(
-        listener: (context,state){},
-        builder: (context,state){
+        listener: (__,_){},
+        builder: (context,_){
           var cubit = AppCubit.get(context);
           return Scaffold(
             backgroundColor: Colors.grey[100],
@@ -50,7 +46,7 @@ class RegisterScreen extends StatelessWidget {
                             height: 180,
                           ),
                           const SizedBox(height: 10),
-                          defaultTextField(
+                          MyTextField(
                               label: 'Email Address',
                               icon: Icons.email_outlined,
                               controller: emailController,
@@ -61,7 +57,7 @@ class RegisterScreen extends StatelessWidget {
                               }
                           ),
                           const SizedBox(height: 10),
-                          defaultTextField(
+                          MyTextField(
                               hidePassword: true,
                               label: 'Password',
                               icon: Icons.lock_outlined,
@@ -71,12 +67,11 @@ class RegisterScreen extends StatelessWidget {
                                   return "very small password";
                                 }
                               }
-
                           ),
                           const SizedBox(
                             height: 10,
                           ),
-                          defaultTextField(
+                          MyTextField(
                             hidePassword: true,
                             label: 'Confirm Password',
                             icon: Icons.lock_outlined,
@@ -84,7 +79,6 @@ class RegisterScreen extends StatelessWidget {
                               if(passwordController.text != value|| value!.isEmpty){
                                 return 'the password is not matched';
                               }
-
                             },
                             controller: confirmPasswordController,
                           ),

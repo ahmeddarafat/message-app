@@ -1,16 +1,18 @@
-import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:messageme_app/cubit/cubit.dart';
 import 'package:messageme_app/cubit/states.dart';
-import 'package:messageme_app/modules/welcome_screen.dart';
+import 'package:messageme_app/pages/welcome_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:messageme_app/network/cache_helper.dart';
-import 'package:messageme_app/shared/notifications.dart';
+import 'package:http/http.dart'as http;
 
 class ChatScreen extends StatefulWidget {
-  ChatScreen({Key? key}) : super(key: key);
+  const ChatScreen({Key? key}) : super(key: key);
   static String routeName = "Chat Screen";
 
   @override
@@ -20,12 +22,14 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _auth = FirebaseAuth.instance;
   final _fireStore = FirebaseFirestore.instance;
+  final fbm =FirebaseMessaging.instance;
+  String? token;
+  String? friendToken;
+
   var messageController = TextEditingController();
 
   String? messageText;
-
   User? signInUser;
-
 
   // void getMessages() async {
   //   final messages = await _fireStore.collection('messages').get();
@@ -51,11 +55,61 @@ class _ChatScreenState extends State<ChatScreen> {
       print('the error in getCurrentUser : $e');
     }
   }
+  void getOnMessaging(){
+    FirebaseMessaging.onMessage.listen((event) {
+      print("===========message sended ===========");
+      print(event.data.toString());
+    });
+  }
+  void getToken() {
+    fbm.getToken().then((token) {
+      print('=====================token==================');
+      print(token);
+      this.token = token;
+      print('===========================================');
+      // here i want to check if this device token is stored in cloud firestore so don't store it again
+      //                  and if it isn't , store it
+        _fireStore.collection('token').where('sender',isEqualTo:signInUser!.email)
+            .get()
+            .then((value) {
+              // here if the first time to email  for storing token
+                if (value.docs.length != 1) {
+                  _fireStore.collection('token').add({
+                    'sender': signInUser!.email,
+                    'token': token,
+                  });
+                  // if the email already stored token
+                }else if(value.docs.length == 1){
+                  // if the email already stored token but its token changed by opening email form another device
+                  if(value.docs[0].data()['token'] != token){
+                    // delete the old and add the new
+                    _fireStore.collection('token').doc(value.docs[0].id).delete();
+                    _fireStore.collection('token').add({
+                      'sender': signInUser!.email,
+                      'token': token,
+                    });
+                  }
+                }
+            });
+    });
+  }
+  Future<void> getFriendToken() async {
+    final tokens = await _fireStore.collection('token').get();
+    for (var token in tokens.docs) {
+      // here we need to handle the the sender token
+      if(token.data()['sender']=='ahmed1@gmail.com'){
+        friendToken = token.data()['token'];
+      }
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    getToken();
+    getOnMessaging();
     getCurrentUser();
+    getFriendToken();
   }
 
   @override
@@ -67,18 +121,13 @@ class _ChatScreenState extends State<ChatScreen> {
           builder: (context,state){
             var cubit = AppCubit.get(context);
             return Scaffold(
-              backgroundColor:IsDark(),
+              backgroundColor:isDark(),
               appBar: AppBar(
                 backgroundColor: Colors.yellow[700],
                 title: Row(
                   children: <Widget>[
-                    SizedBox(
-                      width: 30,
-                      height: 30,
-                      child: Image.asset('images/vector.jpg'),
-                    ),
                     const SizedBox(width: 10),
-                    const Text('Friend'),
+                    const Text('Message Me'),
                   ],
                 ),
                 actions: <Widget>[
@@ -94,7 +143,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       Navigator.pushReplacementNamed(context, WelcomeScreen.routeName);
                     },
                     icon: const Icon(Icons.exit_to_app_outlined),
-                  )
+                  ),
                 ],
               ),
               body: Padding(
@@ -107,6 +156,8 @@ class _ChatScreenState extends State<ChatScreen> {
                             builder: (context, snapshot) {
                               List<MessageLine> messagesWidget = [];
                               if (!snapshot.hasData) {
+                                print('no message found');
+                                print('${snapshot.data}');
                                 return Center(
                                   child: CircularProgressIndicator(),
                                 );
@@ -171,6 +222,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   'sender': signInUser!.email,
                                   'time': FieldValue.serverTimestamp(),
                                 });
+                                sendMessage(signInUser!.email, messageText, friendToken);
                               },
                               child: const Icon(Icons.send),
                             ),
@@ -240,7 +292,7 @@ class MessageLine extends StatelessWidget {
   }
 }
 
-Color IsDark(){
+Color isDark(){
   bool? dark = CacheHelper.getBool(key: 'isDark');
   if(dark!=null){
     return dark?Colors.black:Colors.white;
@@ -249,5 +301,29 @@ Color IsDark(){
   }
 }
 
-
-
+// send notification with rest api
+Future<void> sendMessage(String? title,String? body,String? token)async {
+  var serverToken = 'AAAAks2aZ9Q:APA91bFxeHX4WuQZl9lC3xYqkTYLcnb7Ojr0mb7IQADs-KuJelGwsWwJGq62uurQWz1drzEESyKe1e1rQmDSrTD4cDcMnEMDa55d5VKbs2CCCk7bCom14x5hPQ1spl1MZF3RfkXysHQ5';
+  await await http.post(
+    Uri.parse('https://fcm.googleapis.com/fcm/send'),
+    headers: <String, String>{
+      'Content-Type': 'application/json',
+      'Authorization': 'key=$serverToken',
+    },
+    body: jsonEncode(
+      <String, dynamic>{
+        'notification': <String, dynamic>{
+          'body': body,
+          'title': title
+        },
+        'priority': 'high',
+        'data': <String, dynamic>{
+          'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+          'id': '87',
+          'status': 'done'
+        },
+        'to': token,
+      },
+    ),
+  );
+}
